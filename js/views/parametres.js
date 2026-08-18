@@ -1,15 +1,12 @@
-
 async function renderParametres() {
   const view = document.getElementById('app-view');
   const params = await DB.getParametres();
-
   view.innerHTML = `
     <div class="page-head">
       <span class="eyebrow">Atelier · Réglages</span>
       <h1>Paramètres</h1>
       <p class="page-desc">Ces réglages servent de base à tous les calculs : le poids d'une part et la marge appliquée pour fixer vos prix de vente.</p>
     </div>
-
     <div class="card">
       <h3>Calcul des parts</h3>
       <p style="margin-top:4px;">Utilisé pour estimer le poids d'un gâteau selon son nombre de parts.</p>
@@ -21,7 +18,6 @@ async function renderParametres() {
         </div>
       </div>
     </div>
-
     <div class="card">
       <h3>Coefficient de marge</h3>
       <p style="margin-top:4px;">Le coût matière première de chaque gâteau est multiplié par ce coefficient pour obtenir le prix de vente.</p>
@@ -34,7 +30,6 @@ async function renderParametres() {
         <p class="field-hint">Ex. coefficient 3 → un gâteau à 8 € de matière première se vend 24 €.</p>
       </div>
     </div>
-
     <div class="card">
       <h3>Informations pour le devis</h3>
       <p style="margin-top:4px;">Affichées en haut de chaque devis généré.</p>
@@ -49,12 +44,17 @@ async function renderParametres() {
         </div>
       </div>
     </div>
-
+    <div class="card">
+      <h3>Exporter mes données</h3>
+      <p style="margin-top:4px;">Téléchargez toutes vos recettes, gâteaux, ingrédients, commandes et catégories dans un seul fichier.</p>
+      <div style="margin-top:14px;">
+        <button class="btn btn-secondary" id="btn-export-json">Exporter en JSON</button>
+      </div>
+    </div>
     <div style="display:flex; justify-content:flex-end; margin-top:22px;">
       <button class="btn btn-primary" id="btn-save-params">Enregistrer les paramètres</button>
     </div>
   `;
-
   document.getElementById('btn-save-params').addEventListener('click', async () => {
     const data = {
       grammesParPart: parseFloat(document.getElementById('grammesParPart').value) || 1,
@@ -64,5 +64,26 @@ async function renderParametres() {
     };
     await DB.saveParametres(data);
     showToast('Paramètres enregistrés');
+  });
+
+  document.getElementById('btn-export-json').addEventListener('click', async () => {
+    const donnees = {
+      ingredients: await DB.getAll('ingredients'),
+      recettes: await DB.getAll('recettes'),
+      gateaux: await DB.getAll('gateaux'),
+      commandes: await DB.getAll('commandes'),
+      categories: await DB.getAll('categories'),
+      parametres: await DB.getParametres(),
+    };
+
+    const blob = new Blob([JSON.stringify(donnees, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `atelier-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast('Export téléchargé');
   });
 }
